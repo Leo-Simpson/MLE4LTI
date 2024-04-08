@@ -155,5 +155,5 @@ file_name = "benchmark_example1"
 if small:
     file_name = "small_" + file_name
 name = join(plot_dir, file_name)
-fig.savefig(f"{name}.png", bbox_inches='tight', pad_inches=0.02)
+fig.savefig(f"{name}.png", bbox_inches='tight', pad_inches=0.02, dpi=1200)
 # %%
