@@ -330,9 +330,11 @@ and with
 \end{aligned}
 ```
 The parameters to estimate are
-$$
-	\theta = \begin{bmatrix} \alpha \\ \beta \end{bmatrix}.
-$$
+```math
+\begin{aligned}
+	\theta &= \begin{bmatrix} \alpha \\ \beta \end{bmatrix}.
+\end{aligned}
+```
 
 The model is defined in [_models/example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example2.py),
 and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
@@ -340,14 +342,16 @@ and illustrated with generated data in [_notebooks/illustrative_example1_](https
 # Code example (how to use the package)
 
 ```python
-# xplus_fn: casadi function
-# y_fn: casadi function
-# Q_fn: casadi function
-# R_fn: casadi function
-# y1, y2 are arrays of measurement data with size N1 x ny and N2 x ny
-# u1, u2 are arrays of input data with size N1 x nu and N2 x nu
-# x0 is an array of the initial state of size nx
-# theta0 initial guess to warm start the optimization routine
+'''
+	xplus_fn: casadi function
+	y_fn: casadi function
+	Q_fn: casadi function
+	R_fn: casadi function
+	y1, y2 are arrays of measurement data with size N1 x ny and N2 x ny
+	u1, u2 are arrays of input data with size N1 x nu and N2 x nu
+	x0 is an array of the initial state of size nx
+	theta0 initial guess to warm start the optimization routine
+'''
 
 from RiccatiEst import ModelParser # Model parser to define the model
 from RiccatiEst import solve, compute_cost # main function to solve the problem
