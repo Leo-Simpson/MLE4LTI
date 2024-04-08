@@ -139,9 +139,7 @@ We also define the following:
 		C(\theta) \, P(\eta) \, C(\theta)^{\top} + R(\theta) - S(\eta)
 		\\
 		A( \theta) P(\eta) A( \theta)^{\top} - L S(\eta) L^{\top} + Q(\theta) - P(\eta)
-	\end{bmatrix}, \\
-	G_{MLE}(V, S) &= \mathrm{Trace}\left(V S^{-1}\right) + \log \det S, \\
-	G_{PredErr}(V, S) &= \mathrm{Trace}\left(V \right).
+	\end{bmatrix}.
 \end{aligned}
 ```
 
@@ -152,7 +150,7 @@ Finally, we simply stack all main optimization variables $p = (\theta, \eta, L)$
 			p, e,
 			\hat{x}}
 		}
-	{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
+	{\mathrm{minimize}} \; \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
 	& \mathrm{subject}  \, \mathrm{to} \, 
 	\\&\qquad
 	e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
@@ -186,7 +184,7 @@ One option is simply to call the solver IPOPT to solve the optimization problem 
 			p, e,
 			\hat{x}}
 		}
-	{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
+	{\mathrm{minimize}} \;  \;  G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
 	& \mathrm{subject}  \, \mathrm{to} \, 
 	\\&\qquad
 	e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
@@ -204,7 +202,7 @@ One can also condense partially the problem to remove the dependency in $N$:
 
 ```math
 \begin{aligned}
-	&\underset{ p }{\mathrm{minimize}} \;
+	&\underset{ p }{\mathrm{minimize}} \;  \;
 	G\left(\;  V(p), \; S(p) \right) \\
 	& \mathrm{subject}  \, \mathrm{to} \, 
 	\\&\qquad
@@ -242,7 +240,7 @@ In this algorithm, we update the current solution point $p^{(i)}$ by solving the
 (smaller) NonLinear Program:
 ```math
 \begin{aligned}
-	p^{(i+1)} = &\underset{ p }{\mathrm{\arg \min}} \;
+	p^{(i+1)} = &\underset{ p }{\mathrm{\arg \min}}  \; \;
 	G\left(\;  V^{\textup{quad}}(p; p^{(i)}), \; S(p) \right) \\
 	& \mathrm{subject}  \, \mathrm{to} \, 
 	\\&\qquad
@@ -313,6 +311,11 @@ and with
 The model is defined in [_models/example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example1.py),
 and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example1.py).
 
+The benchmark is computed in the file [_notebooks/benchmark_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/benchmark_example1.py),
+and is depicted here:
+
+![1. Benchmark with example 1](https://github.com/Leo-Simpson/MLE4LTI/blob/main/plots/benchmark_example1.png)
+
 ## Example 2
 For a different example, we consider now the following sensor fusion:
 ```math
@@ -337,7 +340,7 @@ The parameters to estimate are
 ```
 
 The model is defined in [_models/example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example2.py),
-and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
+and illustrated with generated data in [_notebooks/illustrative_example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
 
 # Code example (how to use the package)
 
