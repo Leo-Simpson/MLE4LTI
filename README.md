@@ -329,43 +329,54 @@ and with
 	\mathbb{E}\big[ v v^\top\big] = R(\theta) &= \begin{bmatrix} \beta_2 & 0  \\ \beta_3 & \beta_4  \end{bmatrix}\begin{bmatrix} \beta_2 & 0  \\ \beta_3 & \beta_4  \end{bmatrix}^\top
 \end{aligned}
 ```
-The parameters to estimate are $\theta = \begin{bmatrix} \alpha \\ \beta \end{bmatrix}$.
+The parameters to estimate are
+$$
+	\theta = \begin{bmatrix} \alpha \\ \beta \end{bmatrix}.
+$$
 
 The model is defined in [_models/example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example2.py),
 and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
 
-# How to use the package
+# Code example (how to use the package)
 
-Typical code snippet:
 ```python
+# xplus_fn: casadi function
+# y_fn: casadi function
+# Q_fn: casadi function
+# R_fn: casadi function
+# y1, y2 are arrays of measurement data with size N1 x ny and N2 x ny
+# u1, u2 are arrays of input data with size N1 x nu and N2 x nu
+# x0 is an array of the initial state of size nx
+# theta0 initial guess to warm start the optimization routine
 
 from RiccatiEst import ModelParser # Model parser to define the model
 from RiccatiEst import solve, compute_cost # main function to solve the problem
 
-model = ModelParser(xplus_fn, y_fn, Q_fn, R_fn) # xplus_fn, y_fn, Q_fn, R_fn are casadi function objects.
 problem = {
-    "model": model,
-    "ys": [y1, y2], # y1, y2 are arrays of size N1 x ny and N2 x ny
-    "us": [u1, u2], # u1, u2 are arrays of size N1 x nu and N2 x nu
+    "model": ModelParser(xplus_fn, y_fn, Q_fn, R_fn),
+    "ys": [y1, y2],
+    "us": [u1, u2],
     "x0": x0 # can also be [x0_1, x0_2]
 }
 
 formulation = "MLE" # can be "MLE", "PredErr"
 algorithm = "SP" # can be "SP" or "IPOPT-dense" or "IPOPT-lifted"
 
-opts = {} # default options for SP method:
-          # "TR_init":1.,               # initial lentgth of trust region \Delta
-          # "TR_shrink":0.5,            # = \gamma such that the trust region decreases as \Delta = \gamma \Delta when needed
-          # "maxiter":100,              # for termination
-          # "rtol.cost_decrease":1e-5,  # for termination
-          # "hessian_perturbation":0.,  # add \delta (p-\bar{p})^2 in the quadratic approximation of V
-          # "verbose":True              # printing information during optimization
+# default options for SP method (not necessary to specify them)
+# when IPOPT is used, enter the ipopt options instead.
+opts = {
+  "TR_init":1.,               # initial lentgth of trust region \Delta
+  "TR_shrink":0.5,            # = \gamma such that the trust region decreases as \Delta = \gamma \Delta when needed
+  "maxiter":100,              # for termination
+  "rtol.cost_decrease":1e-5,  # for termination
+  "hessian_perturbation":0.,  # add \delta (p-\bar{p})^2 in the quadratic approximation of V
+  "verbose":True              # printing information during optimization
   }
 theta_found, stats = solve(problem, theta0, formulation, algorithm,
                                         opts=opts, verbose=True)
 ```
 
-See the tutorial examples in
+More detailed examples can be found in
 [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example1.py)
 and
 [_notebooks/illustrative_example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
