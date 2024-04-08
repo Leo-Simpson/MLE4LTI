@@ -13,7 +13,7 @@ Python packages
 	- numpy
 	- scipy
 	- matplotlib
-	- casadi
+	- casadi (with IPOPT)
 	- time
 	- contextlib
 ```
@@ -26,12 +26,12 @@ We assume that the data is generated through the following dynamical system (lin
 
 ```math
 \begin{equation}
-\begin{aligned}
-			x_{k+1} &= A(\theta) x_k + B(\theta) u_k + b(\theta)+ w_k, && k = 0, \dots, N-1, \\
-			y_{k} &= C(\theta) x_k + D(\theta) u_k + d(\theta)+ v_k, &&k = 0, \dots, N, \\
-			w_k &\sim \mathcal{N}\left( 0, Q(\theta) \right), &&k = 0, \dots, N-1, \\
-			v_k &\sim \mathcal{N}\left( 0, R(\theta) \right), &&k = 0, \dots, N, 
-\end{aligned}
+	\begin{aligned}
+		x_{k+1} &= A(\theta) x_k + B(\theta) u_k + b(\theta)+ w_k, && k = 0, \dots, N-1, \\
+		y_{k} &= C(\theta) x_k + D(\theta) u_k + d(\theta)+ v_k, &&k = 0, \dots, N, \\
+		w_k &\sim \mathcal{N}\left( 0, Q(\theta) \right), &&k = 0, \dots, N-1, \\
+		v_k &\sim \mathcal{N}\left( 0, R(\theta) \right), &&k = 0, \dots, N, 
+	\end{aligned}
 \end{equation}
 ```
 where $\theta$ are parameters of the model
@@ -57,36 +57,35 @@ These are maximizing the performance of a Kalman filter on the training data ove
 
 ```math
 \begin{aligned}
-		&\underset{ \substack{
-				\theta, e,
-				\hat{x}}, P, L, S,
-			}
-		{\mathrm{minimize}} \; \frac{1}{N}\sum_{k=1}^{N} G(e_k, S_k) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		L_k = A( \theta) P_{k} \, C(\theta)^{\top} S_k^{-1}, 
-		\\&\qquad
-		S_k = C(\theta) \, P_{k} \, C(\theta)^{\top} + R(\theta), 
-		\\&\qquad
-		e_k = y_k - \left( C(\theta) \hat{x}_k + D(\theta) u_k + d(\theta) \right),
-		\\&\qquad
-		\hat{x}_{k+1} = A( \theta)\hat{x}_{k} + B(\theta)u_k + L_k e_k, 
-		\\&\qquad
-		P_{k+1} = A( \theta) P_kA( \theta)^{\top} - L_k S_k L_k^{\top} + Q(\theta) ,
-        \\&\qquad
-        h(\theta) \geq 0.
-	\end{aligned}
+	&\underset{ \substack{
+			\theta, e,
+			\hat{x}}, P, L, S,
+		}
+	{\mathrm{minimize}} \; \frac{1}{N}\sum_{k=1}^{N} F(e_k, S_k) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	L_k = A( \theta) P_{k} \, C(\theta)^{\top} S_k^{-1}, 
+	\\&\qquad
+	S_k = C(\theta) \, P_{k} \, C(\theta)^{\top} + R(\theta), 
+	\\&\qquad
+	e_k = y_k - \left( C(\theta) \hat{x}_k + D(\theta) u_k + d(\theta) \right),
+	\\&\qquad
+	\hat{x}_{k+1} = A( \theta)\hat{x}_{k} + B(\theta)u_k + L_k e_k, 
+	\\&\qquad
+	P_{k+1} = A( \theta) P_kA( \theta)^{\top} - L_k S_k L_k^{\top} + Q(\theta) ,
+	\\&\qquad
+	h(\theta) \geq 0.
+\end{aligned}
 ```
 
-Regarding the cost function $G(\cdot, \cdot)$, two options are considered
-
+Regarding the cost function $F(\cdot, \cdot)$, two options are considered
 ```math
 \begin{align}
-		\begin{split}
-			G_{\mathrm{MLE}}(e, S) & \equiv e^{\top} S^{-1} e + \log \det S, \\
-			G_{\mathrm{PredErr}}(e, S) & \equiv \left\lVert e \right\rVert^2.
-		\end{split}
-	\end{align}
+	\begin{split}
+		F_{\mathrm{MLE}}(e, S) & \equiv e^{\top} S^{-1} e + \log \det S, \\
+		F_{\mathrm{PredErr}}(e, S) & \equiv \left\lVert e \right\rVert^2.
+	\end{split}
+\end{align}
 ```
 
 The first of them is referred to as "MLE" because it corresponds to the Maximum Likelihood problem. 
@@ -99,25 +98,25 @@ Replacing the Kalman Filter equation with their corresponding steady states equa
 
 ```math
 \begin{aligned}
-		&\underset{ \substack{
-				\theta, e,
-				\hat{x}}, P, L, S,
-			}
-		{\mathrm{minimize}} \; \frac{1}{N}\sum_{k=1}^{N} G(e_k, S) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		e_k = y_k -  \left( C(\theta) \hat{x}_k + D(\theta) u_k + d(\theta) \right),
-		\\&\qquad
-		\hat{x}_{k+1} = A( \theta)\hat{x}_{k} + B(\theta)u_k + L e_k, 
-		\\&\qquad
-		L = A( \theta) P \, C(\theta)^{\top} S^{-1}, 
-		\\&\qquad
-		S = C(\theta) \, P \, C(\theta)^{\top} + R(\theta), 
-		\\&\qquad
-		P = A( \theta) P A( \theta)^{\top} - L S L^{\top} + Q(\theta) ,
-		\\&\qquad
-        h(\theta) \geq 0.
-	\end{aligned}
+	&\underset{ \substack{
+			\theta, e,
+			\hat{x}}, P, L, S,
+		}
+	{\mathrm{minimize}} \; \frac{1}{N}\sum_{k=1}^{N} F(e_k, S) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	e_k = y_k -  \left( C(\theta) \hat{x}_k + D(\theta) u_k + d(\theta) \right),
+	\\&\qquad
+	\hat{x}_{k+1} = A( \theta)\hat{x}_{k} + B(\theta)u_k + L e_k, 
+	\\&\qquad
+	L = A( \theta) P \, C(\theta)^{\top} S^{-1}, 
+	\\&\qquad
+	S = C(\theta) \, P \, C(\theta)^{\top} + R(\theta), 
+	\\&\qquad
+	P = A( \theta) P A( \theta)^{\top} - L S L^{\top} + Q(\theta) ,
+	\\&\qquad
+h(\theta) \geq 0.
+\end{aligned}
 ```
 
 ### Reformulation for a better optimization
@@ -127,46 +126,54 @@ Let us parameterize $S$ and $P$ with additional variables $\eta$
 We also define the following:
 ```math
 \begin{aligned}
-		\tilde{A}(\theta, L) &=  A(\theta) - L C(\theta),\\
-		\tilde{u}_k &= \begin{bmatrix} u_k \\ 1 \\ y_k\end{bmatrix}, \\
-		\tilde{B}(\theta, L) &= 
-		\begin{bmatrix} B(\theta) & b(\theta) - L d(\theta) & L \end{bmatrix}, \\
-		\tilde{D}(\theta, L) &= 
-		\begin{bmatrix} D(\theta) & d(\theta) & -I \end{bmatrix}, \\
-		g(\theta, \eta, L) & =
-		\begin{bmatrix}
-			A( \theta) P(\eta) \, C(\theta)^{\top} - LS(\eta)
-			\\
-			C(\theta) \, P(\eta) \, C(\theta)^{\top} + R(\theta) - S(\eta)
-			\\
-			A( \theta) P(\eta) A( \theta)^{\top} - L S(\eta) L^{\top} + Q(\theta) - P(\eta)
-		\end{bmatrix}, \\
-		G_{MLE}(V, S) &= \mathrm{Trace}\left(V S^{-1}\right) + \log \det S, \\
-		G_{PredErr}(V, S) &= \mathrm{Trace}\left(V \right).
-	\end{aligned}
+	\tilde{A}(\theta, L) &=  A(\theta) - L C(\theta),\\
+	\tilde{u}_k &= \begin{bmatrix} u_k \\ 1 \\ y_k\end{bmatrix}, \\
+	\tilde{B}(\theta, L) &= 
+	\begin{bmatrix} B(\theta) & b(\theta) - L d(\theta) & L \end{bmatrix}, \\
+	\tilde{D}(\theta, L) &= 
+	\begin{bmatrix} D(\theta) & d(\theta) & -I \end{bmatrix}, \\
+	g(\theta, \eta, L) & =
+	\begin{bmatrix}
+		A( \theta) P(\eta) \, C(\theta)^{\top} - LS(\eta)
+		\\
+		C(\theta) \, P(\eta) \, C(\theta)^{\top} + R(\theta) - S(\eta)
+		\\
+		A( \theta) P(\eta) A( \theta)^{\top} - L S(\eta) L^{\top} + Q(\theta) - P(\eta)
+	\end{bmatrix}, \\
+	G_{MLE}(V, S) &= \mathrm{Trace}\left(V S^{-1}\right) + \log \det S, \\
+	G_{PredErr}(V, S) &= \mathrm{Trace}\left(V \right).
+\end{aligned}
 ```
 
 Finally, we simply stack all main optimization variables $p = (\theta, \eta, L)$, which leads to the following formulation:
 ```math
 \begin{aligned}
-		&\underset{ \substack{
-				p, e,
-				\hat{x}}
-			}
-		{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
-		\\&\qquad
-		\hat{x}_{k+1} = \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
-		\\&\qquad
-		g(p) = 0,
-		\\&\qquad
-        h(p) \geq 0 
-	\end{aligned}
+	&\underset{ \substack{
+			p, e,
+			\hat{x}}
+		}
+	{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
+	\\&\qquad
+	\hat{x}_{k+1} = \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
+	\\&\qquad
+	g(p) = 0,
+	\\&\qquad
+h(p) \geq 0 
+\end{aligned}
 ```
 
-
+where the function $G(\cdot, \cdot)$, is one of the two following
+```math
+\begin{align}
+	\begin{split}
+		G_{\mathrm{MLE}}(V, S) & \equiv \mathrm{Tr}\left( S^{-1} V \right) + \log \det S, \\
+		G_{\mathrm{PredErr}}(V, S) & \equiv \mathrm{Tr}\left( V \right) .
+	\end{split}
+\end{align}
+```
 
 
 # Description of the algorithms
@@ -175,38 +182,36 @@ Finally, we simply stack all main optimization variables $p = (\theta, \eta, L)$
 One option is simply to call the solver IPOPT to solve the optimization problem in this lifted form:
 ```math
 \begin{aligned}
-		&\underset{ \substack{
-				p, e,
-				\hat{x}}
-			}
-		{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
-		\\&\qquad
-		\hat{x}_{k+1} = \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
-		\\&\qquad
-		g(p) = 0,
-		\\&\qquad
-        h(p) \geq 0,
-	\end{aligned}
+	&\underset{ \substack{
+			p, e,
+			\hat{x}}
+		}
+	{\mathrm{minimize}} \; G\left(\;  \frac{1}{N}\sum_{k=1}^{N} e_k e_k^\top, \; S(p) \right) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	e_k = C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
+	\\&\qquad
+	\hat{x}_{k+1} = \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
+	\\&\qquad
+	g(p) = 0,
+	\\&\qquad
+	h(p) \geq 0,
+\end{aligned}
 ```
-
-
 
 ## IPOPT-dense
 One can also condense partially the problem to remove the dependency in $N$:
 
 ```math
 \begin{aligned}
-		&\underset{ p }{\mathrm{minimize}} \;
-		G\left(\;  V(p), \; S(p) \right) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		g(p) = 0,
-		\\&\qquad
-        h(p) \geq 0,
-	\end{aligned}
+	&\underset{ p }{\mathrm{minimize}} \;
+	G\left(\;  V(p), \; S(p) \right) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	g(p) = 0,
+	\\&\qquad
+	h(p) \geq 0,
+\end{aligned}
 ```
 
 where the function $V(\cdot)$
@@ -219,10 +224,10 @@ is defined as follows:
 and $e_k(p)$ are computed via the following equations:
 ```math
 \begin{aligned}
-		e_k &= C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
-		\\
-		\hat{x}_{k+1} &= \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
-	\end{aligned}
+	e_k &= C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
+	\\
+	\hat{x}_{k+1} &= \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k, 
+\end{aligned}
 ```
 
 
@@ -231,45 +236,51 @@ and $e_k(p)$ are computed via the following equations:
 We propose a tailored SP method.
 Here, we solve a sequence of optimization problems similar to the one above,
 but where the function $V(\cdot)$ is approximated by a quadratic approximation to remove the dependency in the horizon $N$ in each optimization problem.
-Ultimately, for globalization, a trust region approach is adopted.
+Ultimately, for globalization, a trust region approach is adopted, where the size of the trust region $\Delta$ is reduced when necessary.
 
 In this algorithm, we update the current solution point $p^{(i)}$ by solving the following
 (smaller) NonLinear Program:
 ```math
 \begin{aligned}
-		p^{(i+1)} = &\underset{ p }{\mathrm{\arg \min}} \;
-		G\left(\;  V^{\textup{quad}}(p; p^{(i)}), \; S(p) \right) \\
-		& \mathrm{subject}  \, \mathrm{to} \, 
-		\\&\qquad
-		g(p) = 0,
-		\\&\qquad
-        h(p) \geq 0,
-	\end{aligned}
+	p^{(i+1)} = &\underset{ p }{\mathrm{\arg \min}} \;
+	G\left(\;  V^{\textup{quad}}(p; p^{(i)}), \; S(p) \right) \\
+	& \mathrm{subject}  \, \mathrm{to} \, 
+	\\&\qquad
+	g(p) = 0,
+	\\&\qquad
+	h(p) \geq 0,
+	\\&\qquad
+	\left\lVert p - p^{(i)} \right\rVert_1 \leq \Delta^{(i)},
+\end{aligned}
 ```
 where $V^{\textup{quad}}(p; \bar{p})$ is a (Gauss-Newton) quadratic approximation of $V(\cdot)$ around the point $\bar{p}$:
 ```math
 \begin{aligned}
-		V^{\textup{quad}}(p; \bar{p}) &\coloneqq
-		\frac{1}{N}\sum_{k=1}^{N} e_k^{\textup{lin}}(p; \bar{p}) e_k^{\textup{lin}}(p; \bar{p})^\top,
-	\end{aligned}
+	V^{\textup{quad}}(p; \bar{p}) &\coloneqq
+	\frac{1}{N}\sum_{k=1}^{N} e_k^{\textup{lin}}(p; \bar{p}) e_k^{\textup{lin}}(p; \bar{p})^\top,
+\end{aligned}
 ```
 where $e_k^{\textup{lin}}(p; \bar{p})$ is the linearization of $e_k(p)$:
 ```math
 \begin{aligned}
-		e_k^{\textup{lin}}(p; \bar{p})
-		&\coloneqq
-		e_k(\bar{p}) + \frac{d  e_k(\bar{p})}{d p }  (p  - \bar{p}).
-	\end{aligned}
+	e_k^{\textup{lin}}(p; \bar{p})
+	&\coloneqq
+	e_k(\bar{p}) + \frac{d  e_k(\bar{p})}{d p }  (p  - \bar{p}).
+\end{aligned}
 ```
 
 Note that $e_k(\bar{p})$ and $\frac{d  e_k(\bar{p})}{d p }$ are computed via propagation of the following dynamical equations and of their derivatives
 ```math
 \begin{aligned}
-		e_k &= C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
-		\\
-		\hat{x}_{k+1} &= \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k.
-	\end{aligned}
+	e_k &= C(p) \hat{x}_k + \tilde{D}(p) \tilde{u}_k,
+	\\
+	\hat{x}_{k+1} &= \tilde{A}(p) \hat{x}_{k} + \tilde{B}(p) \tilde{u}_k.
+\end{aligned}
 ```
+
+Regarding the size of the trust region,
+whenever the objective value of the new candidate point $p^{(i+1)}$ is higher the previous point $p^{(i)}$,
+we reject the step and shrink the trust region: $\Delta^{(i+1)} = \gamma \Delta^{(i)}$.
 
 # Benchmark
 
@@ -280,31 +291,82 @@ we run them on a simple example, with generated data, for different realization 
 For a simple model with $3$ states, $1$ input, $2$ outputs, representing heat transfers:
 ```math
 \begin{aligned}
-		\begin{bmatrix} x_1 \\ x_2 \\ x_3  \end{bmatrix}^{+}
-		&=
-		\begin{bmatrix} x_1 \\ x_2 \\ x_3  \end{bmatrix}
-		+
-		\theta_1 \begin{bmatrix} u - x_1 \\ x_1 - x_2 \\ x_2 - x_3  \end{bmatrix}
-		+
-		\theta_2
-		\begin{bmatrix} 0 \\ 0 \\ 0 - x_3 \end{bmatrix} + w
-		\\
-		\begin{bmatrix} y_1 \\ y_2 \end{bmatrix}  &= \begin{bmatrix} x_1  \\  x_3  \end{bmatrix} + v
-	\end{aligned}
+	\begin{bmatrix} x_1 \\ x_2 \\ x_3  \end{bmatrix}^{+}
+	&=
+	\begin{bmatrix} x_1 \\ x_2 \\ x_3  \end{bmatrix}
+	+
+	\theta_1 \begin{bmatrix} u - x_1 \\ x_1 - x_2 \\ x_2 - x_3  \end{bmatrix}
+	+
+	\theta_2
+	\begin{bmatrix} 0 \\ 0 \\ 0 - x_3 \end{bmatrix} + w
+	\\
+	\begin{bmatrix} y_1 \\ y_2 \end{bmatrix}  &= \begin{bmatrix} x_1  \\  x_3  \end{bmatrix} + v
+\end{aligned}
 ```
 and with
 ```math
 \begin{aligned}
-		\mathbb{E}\big[ w w^\top\big] = Q(\theta) &= \begin{bmatrix} \theta_3 & 0 & 0 \\ 0 & \theta_3 & 0 \\ 0 & 0 & \theta_3  \end{bmatrix} \\
-		\mathbb{E}\big[ v v^\top\big] = R(\theta) &= \begin{bmatrix} \theta_4 & 0 \\ 0 & \theta_4 \end{bmatrix} \\
-	\end{aligned}
+	\mathbb{E}\big[ w w^\top\big] = Q(\theta) &= \begin{bmatrix} \theta_3 & 0 & 0 \\ 0 & \theta_3 & 0 \\ 0 & 0 & \theta_3  \end{bmatrix} \\
+	\mathbb{E}\big[ v v^\top\big] = R(\theta) &= \begin{bmatrix} \theta_4 & 0 \\ 0 & \theta_4 \end{bmatrix} \\
+\end{aligned}
 ```
-The benchmark is computed in the file [_notebooks/benchmark_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/benchmark_example1.py),
-and is depicted here:
+The model is defined in [_models/example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example1.py),
+and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example1.py).
 
-![1. Benchmark with example 1](https://github.com/Leo-Simpson/MLE4LTI/blob/main/plots/benchmark_example1.png)
+## Example 2
+For a different example, we consider now the following sensor fusion:
+```math
+\begin{aligned}
+	x^{+} &= x + u + w
+	\\
+	\begin{bmatrix} y_1 \\ y_2 \end{bmatrix}  &= \begin{bmatrix} \alpha_1 x + \alpha_3 \\  \alpha_2 x + \alpha_4 \end{bmatrix} + \begin{bmatrix} v_1 \\ v_2 \end{bmatrix}
+\end{aligned}
+```
+and with
+```math
+\begin{aligned}
+	\mathbb{E}\big[ w w^\top\big] = Q(\theta) &= \beta_1^2 \\
+	\mathbb{E}\big[ v v^\top\big] = R(\theta) &= \begin{bmatrix} \beta_2 & 0  \\ \beta_3 & \beta_4  \end{bmatrix}\begin{bmatrix} \beta_2 & 0  \\ \beta_3 & \beta_4  \end{bmatrix}^\top
+\end{aligned}
+```
+The parameters to estimate are $\theta = \begin{bmatrix} \alpha \\ \beta \end{bmatrix}$.
+
+The model is defined in [_models/example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/models/example2.py),
+and illustrated with generated data in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
 
 # How to use the package
 
-See the tutorial example in [_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example1.py)
+Typical code snippet:
+```python
+
+from RiccatiEst import ModelParser # Model parser to define the model
+from RiccatiEst import solve, compute_cost # main function to solve the problem
+
+model = ModelParser(xplus_fn, y_fn, Q_fn, R_fn) # xplus_fn, y_fn, Q_fn, R_fn are casadi function objects.
+problem = {
+    "model": model,
+    "ys": [y1, y2], # y1, y2 are arrays of size N1 x ny and N2 x ny
+    "us": [u1, u2], # u1, u2 are arrays of size N1 x nu and N2 x nu
+    "x0": x0 # can also be [x0_1, x0_2]
+}
+
+formulation = "MLE" # can be "MLE", "PredErr"
+algorithm = "SP" # can be "SP" or "IPOPT-dense" or "IPOPT-lifted"
+
+opts = {} # default options for SP method:
+          # "TR_init":1.,               # initial lentgth of trust region \Delta
+          # "TR_shrink":0.5,            # = \gamma such that the trust region decreases as \Delta = \gamma \Delta when needed
+          # "maxiter":100,              # for termination
+          # "rtol.cost_decrease":1e-5,  # for termination
+          # "hessian_perturbation":0.,  # add \delta (p-\bar{p})^2 in the quadratic approximation of V
+          # "verbose":True              # printing information during optimization
+  }
+theta_found, stats = solve(problem, theta0, formulation, algorithm,
+                                        opts=opts, verbose=True)
+```
+
+See the tutorial examples in
+[_notebooks/illustrative_example1_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example1.py)
+and
+[_notebooks/illustrative_example2_](https://github.com/Leo-Simpson/MLE4LTI/blob/main/notebooks/illustrative_example2.py).
 
